@@ -49,8 +49,8 @@ namespace NarrowIM.Collectors
         /// <returns></returns>
         public override IEnumerable<Candidate> Collect()
         {
-            Document doc = GetActiveDocument();
-            Uri uri = new Uri(Path.GetDirectoryName(doc.FullName));
+            Document activeDoc = GetActiveDocument();
+            Uri uri = new Uri(Path.GetDirectoryName(activeDoc.FullName));
 
             List<Document> docs = GetDocuments();
             IEnumerable<Candidate> candidates = docs.Select(v => new Candidate {
