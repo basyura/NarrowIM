@@ -1,14 +1,11 @@
 ﻿using System;
-using System.ComponentModel.Design;
-using System.Diagnostics;
+using System.Linq;
+using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
-using System.Globalization;
 using System.Runtime.InteropServices;
-using Microsoft.VisualStudio;
-using Microsoft.VisualStudio.OLE.Interop;
+using EnvDTE;
 using Microsoft.VisualStudio.Shell;
 using Microsoft.VisualStudio.Shell.Interop;
-using Microsoft.Win32;
 using NarrowIM.Collectors;
 
 namespace NarrowIM
@@ -41,6 +38,8 @@ namespace NarrowIM
         /// Command1Package GUID string.
         /// </summary>
         public const string PackageGuidString = "53557b66-07a0-432c-b077-cc90d1433baa";
+        /// <summary></summary>
+        private List<string> _mruBuffers = new List<string>();
 
         /// <summary>
         /// Initializes a new instance of the <see cref="BufferCollector"/> class.
@@ -53,8 +52,27 @@ namespace NarrowIM
             // initialization is the Initialize method.
         }
 
-        #region Package Members
+        /// <summary> </summary>
+        public IEnumerable<string> MRUBufferes
+        {
+            get
+            {
+                var dte = GetService(typeof(SDTE)) as EnvDTE80.DTE2;
+                HashSet<string> docs = new HashSet<string>();
+                foreach (Document doc in dte.Documents)
+                {
+                    if (doc.ActiveWindow == null)
+                    {
+                        continue;
+                    }
+                    docs.Add(doc.FullName);
+                }
 
+                _mruBuffers = _mruBuffers.Where(v => docs.Contains(v)).ToList();
+    
+                return new List<string>(_mruBuffers);
+            }
+        }
         /// <summary>
         /// Initialization of the package; this method is called right after the package is sited, so this is the place
         /// where you can put all the initialization code that rely on services provided by VisualStudio.
@@ -64,9 +82,31 @@ namespace NarrowIM
             BufferCollector.Initialize(this);
             OutlineCollector.Initialize(this);
 
+            var dte = GetService(typeof(SDTE)) as EnvDTE80.DTE2;
+
+            foreach (Document doc in dte.Documents)
+            {
+                _mruBuffers.Add(doc.FullName);
+            }
+
+            dte.Events.get_WindowEvents().WindowActivated += NarrowIMPackage_WindowActivated;
+
             base.Initialize();
         }
-
-        #endregion
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="GotFocus"></param>
+        /// <param name="LostFocus"></param>
+        private void NarrowIMPackage_WindowActivated(Window GotFocus, Window LostFocus)
+        {
+            Document doc = GotFocus.Document;
+            if (doc == null)
+            {
+                return;
+            }
+            _mruBuffers.Remove(doc.FullName);
+            _mruBuffers.Insert(0, doc.FullName);
+        }
     }
 }

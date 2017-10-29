@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Linq;
 using System.Collections.Generic;
 using System.ComponentModel.Design;
 using EnvDTE;
@@ -13,12 +14,12 @@ namespace NarrowIM
     public abstract class CollectorBase
     {
         /// <summary></summary>
-        private Package _package;
+        private NarrowIMPackage _package;
         /// <summary>
         /// 
         /// </summary>
         /// <param name="package"></param>
-        public CollectorBase(Package package)
+        public CollectorBase(NarrowIMPackage package)
         {
             _package = package ?? throw new ArgumentNullException("package");
 
@@ -66,6 +67,14 @@ namespace NarrowIM
             }
 
             return docs;
+        }
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <returns></returns>
+        protected IEnumerable<string> GetMruBuffers()
+        {
+            return _package.MRUBufferes;
         }
         /// <summary>
         /// 

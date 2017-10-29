@@ -24,7 +24,7 @@ namespace NarrowIM.Collectors
         /// Adds our command handlers for menu (commands must exist in the command table file)
         /// </summary>
         /// <param name="package">Owner package, not null.</param>
-        private BufferCollector(Package package) : base(package)
+        private BufferCollector(NarrowIMPackage package) : base(package)
         {
         }
         /// <summary>
@@ -39,7 +39,7 @@ namespace NarrowIM.Collectors
         /// Initializes the singleton instance of the command.
         /// </summary>
         /// <param name="package">Owner package, not null.</param>
-        public static void Initialize(Package package)
+        public static void Initialize(NarrowIMPackage package)
         {
             Instance = new BufferCollector(package);
         }
@@ -49,16 +49,21 @@ namespace NarrowIM.Collectors
         /// <returns></returns>
         public override IEnumerable<Candidate> Collect()
         {
+            // 直近の歴をもとに開いているフィルを並べる必要あり
+
             Document activeDoc = GetActiveDocument();
             Uri uri = new Uri(Path.GetDirectoryName(activeDoc.FullName));
 
-            List<Document> docs = GetDocuments();
-            IEnumerable<Candidate> candidates = docs.Select(v => new Candidate {
-                Word        = Path.GetFileName(v.FullName),
-                Description = uri.MakeRelativeUri(new Uri(Path.GetDirectoryName(v.FullName))).ToString(),
+            List<string> files = new List<string>(GetMruBuffers());
+            files.Remove(activeDoc.FullName);
+            files.Add(activeDoc.FullName);
+
+            IEnumerable<Candidate> candidates = files.Select(v => new Candidate {
+                Word        = Path.GetFileName(v),
+                Description = uri.MakeRelativeUri(new Uri(Path.GetDirectoryName(v))).ToString(),
                 Value       = v,
                 Func        = (vl) => {
-                    Env.ItemOperations.OpenFile(v.FullName);
+                    Env.ItemOperations.OpenFile(v);
                     return true;
                 },
             });

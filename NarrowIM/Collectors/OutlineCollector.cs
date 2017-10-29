@@ -22,7 +22,7 @@ namespace NarrowIM.Collectors
         /// Adds our command handlers for menu (commands must exist in the command table file)
         /// </summary>
         /// <param name="package">Owner package, not null.</param>
-        private OutlineCollector(Package package) : base(package)
+        private OutlineCollector(NarrowIMPackage package) : base(package)
         {
         }
         /// <summary>
@@ -37,7 +37,7 @@ namespace NarrowIM.Collectors
         /// Initializes the singleton instance of the command.
         /// </summary>
         /// <param name="package">Owner package, not null.</param>
-        public static void Initialize(Package package)
+        public static void Initialize(NarrowIMPackage package)
         {
             Instance = new OutlineCollector(package);
         }
