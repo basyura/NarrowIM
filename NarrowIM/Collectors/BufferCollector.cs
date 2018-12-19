@@ -63,7 +63,14 @@ namespace NarrowIM.Collectors
                 Description = uri.MakeRelativeUri(new Uri(Path.GetDirectoryName(v))).ToString(),
                 Value       = v,
                 Func        = (vl) => {
-                    Env.ItemOperations.OpenFile(v);
+                    try
+                    {
+                        Env.ItemOperations.OpenFile(v);
+                    }
+                    catch
+                    {
+                        // 例外が発生する場合があるけど理由がよくわからない
+                    }
                     return true;
                 },
             });
