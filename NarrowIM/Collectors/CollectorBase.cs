@@ -91,8 +91,16 @@ namespace NarrowIM
         {
             DTE2 dte = Env;
             // no doc
-            if (dte.ActiveDocument == null)
+            try
             {
+                if (dte == null || dte.ActiveDocument == null)
+                {
+                    return;
+                }
+            }
+            catch
+            {
+                // プロパティを表示してると例外が発生する
                 return;
             }
             // get editor window
