@@ -1,0 +1,9 @@
+{
+  "version": "1.0",
+  "components": [
+    "Microsoft.VisualStudio.Workload.VisualStudioExtension",
+    "Microsoft.VisualStudio.Workload.ManagedDesktop",
+    "Microsoft.Net.Component.4.8.1.TargetingPack",
+    "Microsoft.Net.ComponentGroup.TargetingPacks.Common"
+  ]
+}

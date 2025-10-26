@@ -28,11 +28,11 @@ namespace NarrowIM
     /// </para>
     /// </remarks>
     [PackageRegistration(UseManagedResourcesOnly = true)]
-    [InstalledProductRegistration("#110", "#112", "1.0", IconResourceID = 400)] // Info on this package for Help/About
+    [InstalledProductRegistration("#110", "#112", "1.0")] // Info on this package for Help/About
     [ProvideMenuResource("Menus.ctmenu", 1)]
     [Guid(NarrowIMPackage.PackageGuidString)]
     [SuppressMessage("StyleCop.CSharp.DocumentationRules", "SA1650:ElementDocumentationMustBeSpelledCorrectly", Justification = "pkgdef, VS and vsixmanifest are valid VS terms")]
-    public sealed class NarrowIMPackage : Package
+    public sealed class NarrowIMPackage : Package, IVsSelectionEvents
     {
         /// <summary>
         /// Command1Package GUID string.
@@ -40,6 +40,8 @@ namespace NarrowIM
         public const string PackageGuidString = "53557b66-07a0-432c-b077-cc90d1433baa";
         /// <summary></summary>
         private List<string> _mruBuffers = new List<string>();
+        private IVsMonitorSelection _monitorSelection;
+        private uint _selectionCookie;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="BufferCollector"/> class.
@@ -83,13 +85,23 @@ namespace NarrowIM
             OutlineCollector.Initialize(this);
 
             var dte = GetService(typeof(SDTE)) as EnvDTE80.DTE2;
+            if (dte == null)
+            {
+                base.Initialize();
+                return;
+            }
 
             foreach (Document doc in dte.Documents)
             {
                 _mruBuffers.Add(doc.FullName);
             }
 
-            dte.Events.get_WindowEvents().WindowActivated += NarrowIMPackage_WindowActivated;
+            // VS Shell の選択イベントを購読してアクティブ ドキュメント変更を検出
+            _monitorSelection = GetService(typeof(IVsMonitorSelection)) as IVsMonitorSelection;
+            if (_monitorSelection != null)
+            {
+                _monitorSelection.AdviseSelectionEvents(this, out _selectionCookie);
+            }
 
             base.Initialize();
         }
@@ -107,6 +119,53 @@ namespace NarrowIM
             }
             _mruBuffers.Remove(doc.FullName);
             _mruBuffers.Insert(0, doc.FullName);
+        }
+
+        // IVsSelectionEvents implementation
+        public int OnCmdUIContextChanged(uint dwCmdUICookie, int fActive)
+        {
+            return Microsoft.VisualStudio.VSConstants.S_OK;
+        }
+
+        public int OnSelectionChanged(IVsHierarchy pHierOld, uint itemidOld, IVsMultiItemSelect pMISOld, ISelectionContainer pSCOld,
+                                       IVsHierarchy pHierNew, uint itemidNew, IVsMultiItemSelect pMISNew, ISelectionContainer pSCNew)
+        {
+            try
+            {
+                var dte = GetService(typeof(SDTE)) as EnvDTE80.DTE2;
+                var active = dte?.ActiveDocument;
+                if (active != null && !string.IsNullOrEmpty(active.FullName))
+                {
+                    _mruBuffers.Remove(active.FullName);
+                    _mruBuffers.Insert(0, active.FullName);
+                }
+            }
+            catch
+            {
+                // ignore and continue
+            }
+            return Microsoft.VisualStudio.VSConstants.S_OK;
+        }
+
+        public int OnElementValueChanged(uint elementid, object varValueOld, object varValueNew)
+        {
+            return Microsoft.VisualStudio.VSConstants.S_OK;
+        }
+
+        protected override void Dispose(bool disposing)
+        {
+            try
+            {
+                if (disposing && _selectionCookie != 0 && _monitorSelection != null)
+                {
+                    _monitorSelection.UnadviseSelectionEvents(_selectionCookie);
+                    _selectionCookie = 0;
+                }
+            }
+            finally
+            {
+                base.Dispose(disposing);
+            }
         }
     }
 }

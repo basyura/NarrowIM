@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using EnvDTE;
-using Microsoft.VisualStudio.Shell;
 using NarrowIM.Common;
 
 namespace NarrowIM.Collectors

@@ -41,3 +41,19 @@
 - Scope: This AGENTS.md applies to the entire repo.
 - Keep patches minimal; do not change line endings or unrelated files.
 - Prefer `apply_patch`; avoid mass refactors; update docs when behavior changes.
+
+## VS2022 Notes (Persistent)
+- Target: VS2022 only. VSIX manifest uses `InstallationTarget [17.0,18.0)` and `ProductArchitecture: amd64`.
+- Build: Use VS2022 MSBuild, not `dotnet build`.
+  - Example: `"C:\\Program Files\\Microsoft Visual Studio\\2022\\Community\\MSBuild\\Current\\Bin\\MSBuild.exe" NarrowIM.sln -t:Restore,Rebuild -p:Configuration=Release`
+- Encoding of logs: VS output may be UTF-16/CP932. If using Git Bash, convert when viewing.
+  - PowerShell: `[Console]::OutputEncoding=[Text.UTF8Encoding]::new($false)`
+  - Git Bash: `... 2>&1 | iconv -f CP932 -t UTF-8 | tee build.log`
+- Resources: Keep `VSPackage.resx` string-only; do not embed icons/binary.
+  - Set icon via VSIX manifest instead of `IconResourceID` to avoid VSSDK cto merge issues.
+  - Do not add `System.Resources.Extensions` (can break cto merge).
+- EnvDTE interop: Do not copy EnvDTE/CommandBars/stdole into the VSIX (`Private=False`).
+  - Avoid `EnvDTE.WindowEvents` in VS2022 (can throw `MissingMethodException`).
+  - Prefer VS Shell events (e.g., `IVsMonitorSelection`, `IVsRunningDocumentTableEvents`) for MRU/activation.
+- ActivityLog: Path `C:\Users\<USER>\AppData\Roaming\Microsoft\VisualStudio\17.0_*\ActivityLog.xml` (UTF-16).
+  - Use `iconv -f UTF-16 -t UTF-8 ActivityLog.xml | rg -n 'type="Error"' -C 4` to inspect errors.
